@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>测试实例</title>
+    <script type='text/javascript'>
+    function searchText(){
+      var key=document.getElementById("key").value;
+      var type=document.getElementById("type").value;
+      var url="https://4ei9686087.imdo.co/hnovel/show?target="+encodeURI(key)+"&type="+type;
+      location.href=url;
+    }
+    document.onkeydown = function(){
+            if(event.keyCode==13)
+                searchText();
+        };
+</script>
+</head>
+
+<body>
+
+
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4" xmlns:th="http://www.w3.org/1999/xhtml">
+
+    <h2 align="center">
+        <p th:utext="${title}"> </p>
+        <p><a th:utext="${sourceWeb}"> </a> </p>
+        <a th:if="${lastChap}" th:href="@{${lastChap}}">上一页</a>
+        　　　　　　　　　
+        <a th:if="${nextChap}" th:href="@{${nextChap}}">下一页</a>
+        　　
+        <a th:if="${jumpChap}" th:href="@{${jumpChap}}">下五页</a>
+    </h2>
+
+    <div style="font-family: 黑体;font-size: 17pt;letter-spacing: 0.1em;line-height: 150%;padding-top: 15px;width: 1000px;margin: auto;" th:utext="${content}">输入文章ID</div>
+
+    <h2 align="center">
+        <a th:if="${lastChap}" th:href="@{${lastChap}}">上一页</a>
+        　　　　　　　　　　　
+        <a th:if="${nextChap}" th:href="@{${nextChap}}">下一页</a>
+        　　
+        <a th:if="${jumpChap}" th:href="@{${jumpChap}}">下五页</a>
+        <br>
+        <a th:href="@{/hnovel/show}">返回</a>
+    </h2>
+
+
+
+</main>
+<br><br>大约二万字一页
+</body>
+</html>

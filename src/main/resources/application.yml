@@ -1,0 +1,5 @@
+search:
+  thread-num: 64
+  directory: D:\\txt下载
+server:
+  forward-headers-strategy: none

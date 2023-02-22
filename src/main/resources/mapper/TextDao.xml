@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.dao.TextDao">
+
+    <resultMap id="BaseResultMap" type="com.example.demo.entity.TextPath" >
+        <result column="tid" property="tid" />
+        <result column="file_directory" property="fileDirectory" />
+        <result column="file_name" property="fileName" />
+        <result column="grade" property="grade" />
+        <result column="raw_grade" property="rawGrade" />
+        <result column="ave_grade" property="aveGrade" />
+        <result column="file_length" property="fileLength" />
+        <result column="is_favor" property="isFavor" />
+
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        tid,
+                file_directory,
+                file_name,
+                grade,
+                raw_grade,
+                ave_grade,
+                file_length,
+                is_favor
+    </sql>
+
+    <select id="getPathByTid" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        WHERE tid=#{tid}
+    </select>
+
+    <select id="tempGet" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        WHERE grade is null
+    </select>
+
+    <select id="getAllByTidS" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        WHERE tid in (${TidList})
+    </select>
+
+    <select id="getTopK" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        order by grade desc
+        limit ${k}
+    </select>
+
+    <select id="getFavor" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        where is_favor=1
+        order by grade desc
+    </select>
+    <select id="getAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM pixiv_text_path
+        order by grade desc
+    </select>
+
+    <insert id="addTextPath" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.example.demo.entity.TextPath">
+        INSERT INTO pixiv_text_path
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != tid and '' != tid">
+                tid,
+            </if>
+            <if test="null != fileDirectory and '' != fileDirectory">
+                file_directory,
+            </if>
+            <if test="null != fileName and '' != fileName">
+                file_name,
+            </if>
+            <if test="null != grade and '' != grade">
+                grade,
+            </if>
+            <if test="null != rawGrade and '' != rawGrade">
+                raw_grade,
+            </if>
+            <if test="null != aveGrade and '' != aveGrade">
+                ave_grade,
+            </if>
+            <if test="null != fileLength and '' != fileLength">
+                file_length
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != tid and '' != tid">
+                #{tid},
+            </if>
+            <if test="null != fileDirectory and '' != fileDirectory">
+                #{fileDirectory},
+            </if>
+            <if test="null != fileName and '' != fileName">
+                #{fileName},
+            </if>
+            <if test="null != grade and '' != grade">
+                #{grade},
+            </if>
+            <if test="null != rawGrade and '' != rawGrade">
+                #{rawGrade},
+            </if>
+            <if test="null != aveGrade and '' != aveGrade">
+                #{aveGrade},
+            </if>
+            <if test="null != fileLength and '' != fileLength">
+                #{fileLength}
+            </if>
+        </trim>
+    </insert>
+
+    <delete id="deleteTextPathByTid" >
+        DELETE FROM pixiv_text_path
+        WHERE tid = #{tid}
+    </delete>
+
+    <update id="updateTextPath" parameterType="com.example.demo.entity.TextPath">
+        UPDATE pixiv_text_path
+        <set>
+            <if test="null != tid and '' != tid">tid = #{tid},</if>
+            <if test="null != fileDirectory and '' != fileDirectory">file_directory = #{fileDirectory},</if>
+            <if test="null != fileName and '' != fileName">file_name = #{fileName},</if>
+            <if test="null != grade and '' != grade">grade = #{grade},</if>
+            <if test="null != rawGrade and '' != rawGrade">raw_grade = #{rawGrade},</if>
+            <if test="null != aveGrade and '' != aveGrade">ave_grade = #{aveGrade},</if>
+            <if test="null != fileLength and '' != fileLength">file_length = #{fileLength}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="setFavor" >
+        UPDATE pixiv_text_path
+        <set>
+            is_favor=1
+        </set>
+        WHERE tid = #{tid}
+    </update>
+
+
+
+</mapper>

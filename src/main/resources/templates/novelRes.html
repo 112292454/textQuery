@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>测试实例</title>
+    <script type='text/javascript'>
+    function searchText(){
+      var key=document.getElementById("key").value;
+      var type=document.getElementById("type").value;
+      var url="https://4ei9686087.imdo.co/hnovel/show?target="+encodeURI(key)+"&type="+type;
+      location.href=url;
+    }
+    function pixiv(id){
+      location.href="https://www.pixiv.net/novel/show.php?id="+id;
+    }
+    document.onkeydown = function(){
+            if(event.keyCode==13)
+                searchText();
+        };
+</script>
+</head>
+
+<body>
+
+
+<main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4" xmlns:th="http://www.w3.org/1999/xhtml">
+    <h2 align="center">
+        <a th:if="${searchKey}" th:text="'searched for:'+${searchKey}"></a>
+        <div th:if="!${searchKey}" >请输入搜索关键词</div>
+        <br><a id="viewFavor" href="/hnovel/favor/show">收藏夹</a>
+        <br>搜索模式：
+        <select id="type" name="selectList">
+            <option value="1">空格分隔，包含关键词</option>
+            <option value="2">正则表达式</option>
+        </select>
+        <br>
+        关键词：
+        <input type='text' th:value="${searchKey}" onkeypress='if(event.keyCode==13) searchText()' id='key'/>
+        <a id="doSearch" href="javascript:;" onclick="searchText()">搜索</a>
+    </h2>
+
+    <div class="table-responsive">
+        <table class="display table table-bordered table-striped" border="5">
+            <thead>
+            <tr>
+                <th>PID</th>
+                <th>p站链接</th>
+                <th>name</th>
+                <th>preview</th>
+                <th>grade</th>
+                <th>内容</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="n:${novel}">
+                <td th:text="${n.PID}"></td>
+                <td><a th:if="${n.PID.length()<9}" href="javascript:;" onclick="pixiv(${n.PID})">pixiv</a></td>
+                <td th:text="${n.name}"></td>
+                <td th:text="${n.preview}"></td>
+                <td th:text="${n.grade}"></td>
+                <td><a th:href="@{'/hnovel/t/'+${n.PID}}">正文</a></td>
+                <td><a th:href="@{'/hnovel/favor/add/'+${n.PID}}">收藏</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<h1 align="center"><a href="#viewFavor">回顶部</a></h1>
+
+<br>注：为了减轻流量压力（免费的穿透域名只有1g/月），/show显示评分前150个，如果一定需要全部的，使用/showall。
+此情况下，越罕见的关键词会越慢，但最长达到10或15秒就强行停止
+<br><br>搜索支持正则表达式，比如 “aaa.*bbb” 表示搜索包含了 “aaa……（若干内容）……bbb” 这样字段的文章
+<br><br>也支持普通的关键词，比如“aaa bbb NOT ccc"表示同时包含aaa及bbb两个词，且不包含NOT后面ccc这个词的文章
+<br><br>虽然但是<br>内容来自网络爬虫，仅供搜索，该网页不存储任何内容，也对其内容不知情
+</body>
+</html>
