@@ -12,7 +12,7 @@
         <result column="ave_grade" property="aveGrade" />
         <result column="file_length" property="fileLength" />
         <result column="is_favor" property="isFavor" />
-
+        <result column="simHash" property="simHash" />
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -23,7 +23,8 @@
                 raw_grade,
                 ave_grade,
                 file_length,
-                is_favor
+                is_favor,
+                simHash
     </sql>
 
     <select id="getPathByTid" resultMap="BaseResultMap">
@@ -60,7 +61,7 @@
     <select id="getAll" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List" />
         FROM pixiv_text_path
-        order by grade desc
+        order by grade*abs(ave_grade) desc
     </select>
 
     <insert id="addTextPath" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.example.demo.entity.TextPath">
@@ -85,8 +86,12 @@
                 ave_grade,
             </if>
             <if test="null != fileLength and '' != fileLength">
-                file_length
+                file_length,
             </if>
+            <if test="null != simHash and '' != simHash">
+                simHash
+            </if>
+
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="null != tid and '' != tid">
@@ -108,8 +113,12 @@
                 #{aveGrade},
             </if>
             <if test="null != fileLength and '' != fileLength">
-                #{fileLength}
+                #{fileLength},
             </if>
+            <if test="null != simHash and '' != simHash">
+                #{simHash}
+            </if>
+
         </trim>
     </insert>
 

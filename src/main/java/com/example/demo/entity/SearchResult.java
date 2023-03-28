@@ -23,4 +23,10 @@ public class SearchResult {
 
 	@CsvBindByName(column = "grade")
     Integer grade;
+
+	public SearchResult(TextPath a){
+		this(a.getTid(), a.getPath(),
+				a.getPath().substring(a.getPath().lastIndexOf('\\')+1), "", a.getGrade());
+	}
+
 }

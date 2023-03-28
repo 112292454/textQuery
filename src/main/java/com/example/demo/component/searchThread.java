@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
@@ -31,6 +32,8 @@ public class searchThread extends Thread {
 
 	Logger logger = LoggerFactory.getLogger(searchThread.class);
 	private List<TextPath> searchTask;
+
+	public static volatile HashMap<String, String> cache=new HashMap<>();
 	private int Tid;
 	private int threadNum=64;
 	private String target;
@@ -41,7 +44,7 @@ public class searchThread extends Thread {
 	private NovelGrade novelGrade;
 
 	private long startTime;
-	private static final int MAX_SEARCH_TIME = 10000;
+	private static final int MAX_SEARCH_TIME = 5000;
 	private static  int MAX_SEARCH_NUM;
 	public static final int TEXT_CONTAINS = 1;
 	public static final int REGEX_FIND = 2;
@@ -113,7 +116,7 @@ public class searchThread extends Thread {
 			case 1:
 				//空格分隔的contains-NOT模式：
 				//key形如“关键词1 关键词2 关键词3 NOT 关键词4 关键词5”：包含1~3，且不包含4、5（not后面的均排除）
-				boolean satisfied=true;
+				boolean satisfied=false;
 				String[] hasWord= Arrays.stream(target.split(" ")).
 						filter(StringUtils::isNotBlank).toArray(String[]::new);
 				int i;
@@ -121,7 +124,19 @@ public class searchThread extends Thread {
 				//包括应有的关键词
 				for (i = 0; i < hasWord.length; i++) {
 					if(hasWord[i].equals("NOT")) break;
-					satisfied = context.contains(hasWord[i]);
+					if(hasWord[i].contains("|")){
+						for (String s : hasWord[i].split("\\|")) {
+							satisfied |= context.contains(s);
+							if(satisfied) {
+								index=context.indexOf(s);
+								break;
+							}
+						}
+					}else{
+						satisfied = context.contains(hasWord[i]);
+						index=context.indexOf(hasWord[i]);
+					}
+
 					if(!satisfied) {
 						i=hasWord.length;
 						break;
@@ -132,7 +147,10 @@ public class searchThread extends Thread {
 				for (; i < hasWord.length; i++) {
 					satisfied&= !context.contains(hasWord[i]);
 				}
-				if(satisfied) index=context.indexOf(hasWord[0]);
+
+				//if(satisfied) {
+				//	index=context.indexOf(hasWord[0]);
+				//}
 				break;
 			case 2: //正则匹配模式
 				matcher = this.match.matcher(context);
@@ -153,7 +171,7 @@ public class searchThread extends Thread {
 			TextPath textPath = searchTask.get(i);
 			Path s = Paths.get(textPath.getPath());
 			//若超时
-			if (System.currentTimeMillis() - this.startTime > 15000L) {
+			if (System.currentTimeMillis() - this.startTime > MAX_SEARCH_TIME) {
 				//this.logger.info("未搜索完数量 = {}/{}", this.searchTask.size() - i, this.searchTask.size());
 				surplus+=searchTask.size() - i;
 				//if(Tid==1){
@@ -164,7 +182,7 @@ public class searchThread extends Thread {
 			}
 
 			try {
-				String context = getContext(textPath, s);
+				String context = getContext(textPath);
 				int index = getTargetIndex(context);
 				if (index >= 0) {
 					String PID="888888888888",localPath,name,preview;
@@ -195,8 +213,17 @@ public class searchThread extends Thread {
 		this.countDownLatch.countDown();
 	}
 
-	private String getContext(TextPath textPath, Path s) throws IOException {
-		FileInputStream fileInputStream = new FileInputStream(s.toFile());
+	public static String getContext(TextPath textPath) throws IOException {
+		if((textPath.getGrade()>0||textPath.getFileLength()<1e3)&&cache!=null){
+			if(cache.containsKey(textPath.getTid())) return cache.get(textPath.getTid());
+		}
+		File file = Paths.get(textPath.getPath()).toFile();
+		FileInputStream fileInputStream = null;
+		try {
+			fileInputStream = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			return "";
+		}
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
 
 		String context;
@@ -205,7 +232,8 @@ public class searchThread extends Thread {
 		if(fileLength>200000) {
 			//对于长文：取前5w字，保证初始观看的地方被检索了，然后全文每1/5的地方各取1w字
 
-			StringBuilder sb=new StringBuilder(100000);
+			StringBuilder sb=new StringBuilder(100100);
+			sb.append(file.getName()).append("     ");
 			char[] buffer=new char[1024];
 			for (int i = 0; i < 50; i++) {
 				int nums=bufferedReader.read(buffer,0,buffer.length);
@@ -222,9 +250,11 @@ public class searchThread extends Thread {
 			}
 			context=sb.toString();
 		}else{
-			context= s.toFile().getName() + "     " + IOUtils.toString(bufferedReader);
+			context= file.getName() + "     " + IOUtils.toString(bufferedReader);
 		}
+		cache.put(textPath.getTid(), context);
 		return context;
+
 	}
 }
 

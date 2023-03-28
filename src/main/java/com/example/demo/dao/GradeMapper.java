@@ -55,4 +55,11 @@ public interface GradeMapper {
     )
     List<Grade> selectList(Grade grade);
 
+    @Results(value = {
+            @Result(property = "str", column = "str"),
+            @Result(property = "count", column = "count"),
+            @Result(property = "grade", column = "grade")
+    })
+    @Select(value = "select * from grade")
+    List<Grade> selectAll();
 }

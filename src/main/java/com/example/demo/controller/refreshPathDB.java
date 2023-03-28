@@ -2,15 +2,19 @@ package com.example.demo.controller;
 
 import DownloadTools.util.ChineseUtil;
 import DownloadTools.util.FileUtil;
+import com.example.demo.dao.GradeMapper;
 import com.example.demo.entity.TextPath;
 import com.example.demo.dao.TextDao;
 import com.example.demo.service.NovelGrade;
+import com.example.demo.utils.SimHashUtil;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
+import org.jsoup.internal.StringUtil;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Controller()
+@Controller
 public class refreshPathDB {
 
 	public static final String UTF_8 = "utf-8";
@@ -30,6 +34,12 @@ public class refreshPathDB {
     TextDao textDao;
 	@Autowired
 	NovelGrade novelGrade;
+
+	@Autowired
+	GradeMapper GradeMapper;
+
+	@Autowired
+	SimHashUtil simHashUtil;
 
 	private static final Pattern PID=Pattern.compile("(-\\d{6,10}\\.)|(^\\d{6,10}-)");
 	private static final Pattern ANY_ID=Pattern.compile("(-\\d{6,}\\.)|(^\\d{6,}-)");
@@ -40,7 +50,7 @@ public class refreshPathDB {
 	private SqlSessionTemplate sqlSessionTemplate;
 
 	@RequestMapping("/refresh")
-	public synchronized void run() {
+	public synchronized String run() throws IOException {
 		List<Path> paths = getPaths();
 
 		HashMap<String,TextPath> index=new HashMap<>();
@@ -55,8 +65,9 @@ public class refreshPathDB {
 			String content=name+"      "+FileUtil.readText(file, UTF_8);
 			long l=novelGrade.getRawGrade(content);
 			int g=novelGrade.getNovelGrade(content);
-			double ave= 1.0*l/content.length();
-			if(content.contains("們")) l++;//权宜 保留繁体的
+			double ave= novelGrade.getAveGrade(content);
+
+			if(content.contains("們")|| StringUtil.isBlank(content)) l++;//权宜 保留繁体的
 
 			if(p.contains("pixiv下载")){//查找对应的txt库路径
 				Matcher matcher= PID.matcher(name);
@@ -89,12 +100,12 @@ public class refreshPathDB {
 			id=id.replaceAll("[-.]", "");
 
 
-			if(l==0&&g==0&&ave==0) {
+			if(l==0&&g==0) {
 				try {
 					if(ChineseUtil.isMessyCode(content)) {
 						Files.move(path,Paths.get("D:\\\\txt下载\\不可用的\\乱码\\"+ name));
 					} else {
-						Files.move(path, Paths.get("D:\\txt下载\\0分的\\" + file.getName()));
+						//Files.move(path, Paths.get("D:\\txt下载\\0分的\\" + file.getName()));
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -113,6 +124,8 @@ public class refreshPathDB {
 					textPath.setGrade(g);
 					textPath.setAveGrade(ave);
 					textPath.setFileLength(content.length());
+					textPath.setSimHash(simHashUtil.getSimHash(path));
+					assert textPath.getSimHash()!=0;
 					index.put(id,textPath);
 				}
 			}
@@ -158,7 +171,15 @@ public class refreshPathDB {
 		System.out.println(new Date());
 		batchInsert(tran);
 		System.out.println(new Date());
+		return "刷新成功！";
+	}
 
+	@RequestMapping("/grade")
+	@ResponseBody
+	public String getGrade(String content){
+		int i=novelGrade.getNovelGrade(content);
+		//System.out.println(content.substring(0, 50) + ":" + i);
+		return i+"";
 	}
 
 	//@RequestMapping("/temp")

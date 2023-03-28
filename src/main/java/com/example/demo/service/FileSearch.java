@@ -1,9 +1,8 @@
-package com.example.demo.component;
+package com.example.demo.service;
+import com.example.demo.component.searchThread;
 import com.example.demo.entity.TextPath;
 import com.example.demo.dao.TextDao;
 import com.example.demo.entity.SearchResult;
-import com.example.demo.service.FileDistribute;
-import com.example.demo.service.NovelGrade;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.RFC4180Parser;
@@ -12,6 +11,7 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import lombok.Data;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +22,11 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -54,6 +57,10 @@ public class FileSearch {
 
 	private List<searchThread> threads;
 
+	private List<TextPath> paths;
+
+	private static volatile HashMap<String, String> cache;
+
 	FileDistribute fileDistribute;
 
 	CountDownLatch latch;
@@ -68,13 +75,27 @@ public class FileSearch {
 		//TODO:为什么在这里的build时，读取不到配置文件里写的属性，但是在controller里去调用此build就可以了
 		//this.build();
 	}
-	public void build() {
+	public void build(){
 		List<TextPath> paths =new ArrayList<>();
 		paths=textDao.getAll();
+		this.paths = paths;
+		cache=new HashMap<>();
+		for (TextPath path : paths) {
+			if(path.getGrade()>300||path.getFileLength()<1e3){
+				String conten= null;
+				try {
+					conten =searchThread.getContext(path);
+							// path.getFileName()+"      "+IOUtils.toString(Files.newInputStream(Paths.get(path.getPath())), StandardCharsets.UTF_8);
+					cache.put(path.getTid(), conten);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+
+			}
+		}
 		//for (TextPath textPath : paths)
 		//	if(!Files.exists(Paths.get(textPath.getPath())))
 		//		textDao.deleteTextPathByTid(textPath.getTid());
-
 		//paths.sort(Comparator.comparingInt(TextPath::getFileLength));
 		//try {
 		//	paths =Files.walk(Paths.get(this.directory), new java.nio.file.FileVisitOption[0])
@@ -100,6 +121,7 @@ public class FileSearch {
 	private List<searchThread> creatThreads() {
 		this.latch = new CountDownLatch(this.threadNum);
 		this.threads = new ArrayList<>();
+		searchThread.cache =cache;
 		for (int i = 0; i < this.threadNum; i++) {
 			searchThread thread = new searchThread(i);
 			thread.setCountDownLatch(this.latch);

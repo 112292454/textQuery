@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type='text/javascript'>
+    function searchSimilar(){
+      var key=document.getElementById("key").value;
+      var url="/hnovel/similar?text="+encodeURI(key);
+      location.href=url;
+    }
+    document.onkeydown = function(){
+            if(event.keyCode==13)
+                searchText();
+        };
+</script>
+</head>
+<body>
+
+<h2 align="center">
+    <p>
+        <a href="/hnovel/show">小说搜索（r18警告）</a>
+    </p>
+    <p>
+        待查询文本：
+        <textarea rows="10" cols="30"  onkeypress='if(event.keyCode==13) searchText()' id='key'></textarea>
+        <br>
+        <a id="searchSimilar" href="javascript:;" onclick="searchSimilar()">找相似</a>
+    </p>
+</h2>
+
+</body>
+</html>

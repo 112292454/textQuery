@@ -51,6 +51,8 @@ public interface TextDao {
   int updateTextPath(TextPath paramTextPath);
 
   boolean setFavor(String tid);
+
+
 }
 
 

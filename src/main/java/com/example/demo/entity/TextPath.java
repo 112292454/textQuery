@@ -55,6 +55,8 @@ public class TextPath {
 	 */
 	private Boolean isFavor;
 
+	private long simHash;
+
 
 
 	public TextPath(String tid, File file) {
